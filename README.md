@@ -87,6 +87,8 @@ The variant system ensures:
 
 ## Testing
 
+> **Note:** Testing is local-only. There is no automatic test feedback on push. You must run the tests yourself before submitting.
+
 The test suite uses pytest fixtures to load variant-specific parameters:
 
 ```python
@@ -118,7 +120,6 @@ csc3301-lab06-concurrency/
 │   └── generate_assignment.py   # Generate personalized assignment
 ├── .github/
 │   └── workflows/
-│       ├── autograding.yml      # Run tests on push
 │       └── generate-variant.yml # Generate variant on repo creation
 ├── ASSIGNMENT_TEMPLATE.md       # Template with placeholders
 ├── ASSIGNMENT.md                # Generated personalized assignment
@@ -141,6 +142,5 @@ pip install -r requirements.txt
 ## Submission
 
 1. Complete all tasks in the `src/` directory
-2. Ensure all visible tests pass
-3. Push your changes to trigger autograding
-4. Check the Actions tab for grading results
+2. Run all visible tests locally and ensure they pass: `pytest tests/visible/ -v`
+3. Commit and push your changes before the deadline
