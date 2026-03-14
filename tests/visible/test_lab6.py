@@ -97,8 +97,20 @@ class TestBrokenVsFixed:
     """Tests for demonstrating race conditions and thread-safe fixes."""
 
     def test_broken_counter_fails(self, num_threads, iterations_per_thread):
-        """BrokenCounter should have race conditions."""
-        from src.task1_threadsafe import BrokenCounter
+        """BrokenCounter should have race conditions, and FixedCounterLock should work."""
+        from src.task1_threadsafe import BrokenCounter, FixedCounterLock
+
+        # Guard: FixedCounterLock must be implemented (not just a bare class with pass)
+        fixed = FixedCounterLock()
+        assert hasattr(fixed, 'increment'), \
+            "FixedCounterLock must implement increment() method"
+        assert hasattr(fixed, 'get_value'), \
+            "FixedCounterLock must implement get_value() method"
+
+        # Verify FixedCounterLock actually works correctly first
+        fixed.increment()
+        assert fixed.get_value() == 1, \
+            "FixedCounterLock must correctly count increments"
 
         expected = num_threads * iterations_per_thread
 
@@ -166,34 +178,56 @@ class TestWebScraper:
     """Tests for web scraper concurrency implementations."""
 
     def test_fetch_sequential_signature(self):
-        """Test that fetch_sequential function exists and is callable."""
+        """Test that fetch_sequential function exists, is callable, and has a real implementation."""
         try:
             from src.task2_scraper import fetch_sequential
             assert callable(fetch_sequential)
+            # Guard: function must not just be 'pass' (returning None with no work)
+            import inspect
+            source = inspect.getsource(fetch_sequential)
+            assert 'requests' in source or 'get(' in source or 'return' in source.split('pass')[0], \
+                "fetch_sequential must have a real implementation, not just 'pass'"
+            # Verify it returns a list (not None) when called with empty input
+            result = fetch_sequential([])
+            assert result is not None, "fetch_sequential should return a list, not None"
+            assert isinstance(result, list), "fetch_sequential should return a list"
         except ImportError:
             pytest.skip("task2_scraper not yet implemented")
 
     def test_fetch_threaded_signature(self):
-        """Test that fetch_threaded function exists and is callable."""
+        """Test that fetch_threaded function exists, is callable, and has a real implementation."""
         try:
             from src.task2_scraper import fetch_threaded
             assert callable(fetch_threaded)
+            # Guard: function must not just be 'pass' (returning None with no work)
+            result = fetch_threaded([])
+            assert result is not None, "fetch_threaded should return a list, not None"
+            assert isinstance(result, list), "fetch_threaded should return a list"
         except ImportError:
             pytest.skip("task2_scraper not yet implemented")
 
     def test_fetch_async_signature(self):
-        """Test that fetch_async function exists and is callable."""
+        """Test that fetch_async function exists, is callable, and has a real implementation."""
         try:
             from src.task2_scraper import fetch_async
+            import asyncio
             assert callable(fetch_async)
+            # Guard: async function must not just be 'pass' (returning None)
+            result = asyncio.run(fetch_async([]))
+            assert result is not None, "fetch_async should return a list, not None"
+            assert isinstance(result, list), "fetch_async should return a list"
         except ImportError:
             pytest.skip("task2_scraper not yet implemented")
 
     def test_fetch_multiprocess_signature(self):
-        """Test that fetch_multiprocess function exists and is callable."""
+        """Test that fetch_multiprocess function exists, is callable, and has a real implementation."""
         try:
             from src.task2_scraper import fetch_multiprocess
             assert callable(fetch_multiprocess)
+            # Guard: function must not just be 'pass' (returning None with no work)
+            result = fetch_multiprocess([])
+            assert result is not None, "fetch_multiprocess should return a list, not None"
+            assert isinstance(result, list), "fetch_multiprocess should return a list"
         except ImportError:
             pytest.skip("task2_scraper not yet implemented")
 
@@ -202,19 +236,34 @@ class TestProducerConsumer:
     """Tests for producer-consumer pipeline."""
 
     def test_producer_consumer_imports(self):
-        """Test that ProducerConsumer class can be imported."""
+        """Test that ProducerConsumer class can be imported and has a real implementation."""
         try:
             from src.task3_pipeline import ProducerConsumer
             assert ProducerConsumer is not None
+            # Guard: ProducerConsumer must have a working implementation
+            pc = ProducerConsumer()
+            assert hasattr(pc, 'produce'), "ProducerConsumer must have a produce method"
+            assert hasattr(pc, 'consume'), "ProducerConsumer must have a consume method"
+            # Verify produce/consume actually work (not just pass)
+            pc.produce("test_item")
+            result = pc.consume(timeout=1.0)
+            assert result == "test_item", \
+                "ProducerConsumer must actually store and retrieve items"
         except ImportError:
             pytest.skip("task3_pipeline not yet implemented")
 
     def test_analytics_event_dataclass(self):
-        """Test that AnalyticsEvent dataclass exists."""
+        """Test that AnalyticsEvent dataclass exists and EventStream is implemented."""
         try:
-            from src.task4_integration import AnalyticsEvent
-            event = AnalyticsEvent(event_id=1, event_type="test", timestamp=0.0, duration=1.0)
-            assert event.event_id == 1
+            from src.task4_integration import AnalyticsEvent, EventStream
+            from datetime import datetime
+            event = AnalyticsEvent(timestamp=datetime.now(), event_type="test", value=1.0)
             assert event.event_type == "test"
+            assert event.value == 1.0
+            # Guard: EventStream must be implemented, not just the dataclass
+            stream = EventStream()
+            stream.add_event(event)
+            events = stream.get_events()
+            assert len(events) >= 1, "EventStream must store and return events"
         except ImportError:
             pytest.skip("task4_integration not yet implemented")
